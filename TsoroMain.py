@@ -1,70 +1,78 @@
 from TsoroGameEngine import TsoroGameEngine
+from UnitActionEnum import UnitAction
+import os
 
+def convert_str(s):
+	# Convert string to either int or float.
+	try:
+		ret = int(s)
+	except ValueError:
+		#Try float.
+		ret = float(s)
+	return ret
 
 def start():
-    start = False
-    while start == False:
-        start_option = raw_input("New game (N) or load a game (L)?: ").upper()
-        
-        if start_option == "NEW GAME" or start_option == "N":
-            os.system('cls')        #clears screen
-            os.system('color c')    #Light red
-            
-            player1 = player(raw_input("What is your name Player 1?: ").upper(), 'a')   #Light green
-            player2 = AI("Alpha", 0)
-            
-            first, second = player1, player2
-            Won = False
-            start = True
-            turn = 0
-            
-        elif start_option == "LOAD" or start_option == "L":
+	start = False
+	won = False
+	tsoro = None
+	turn_selection = False
+	while start == False:
+		start_option = input("Welcome to game Tsoro! Choose the game level and press return: Easy (1) - Medium (2) - Hard (3): ")
+		
+		level = convert_str(start_option)        
+		
+		if level in range(1,3):
+			tsoro = TsoroGameEngine(level)
+		
+			os.system('cls')        #clears screen
+			#os.system('color c')    #light red console background
 
-            raw_filenames = os.listdir(".\Saves")
+			tsoro.print_board()
+			
+			while turn_selection == False:
+				turn =  input("Would you like to start first? Y/N ").upper()  
+				if turn == "Y" or turn == "YES":                
+					os.system('color a')    #light green console background 
+					turn_selection = True                         
+					
+				elif turn == "N" or turn == "NO":
+					tsoro.computer_start()
+					turn_selection = True   
 
-            save_files = []
-            for name in raw_filenames:
+				else:
+					print('You have chosen an invalid choice!\n')
+					print('Try again\n')
 
-                if name.endswith('.pkl'):
-                    save_files.append(os.path.join(".\Saves", name))
+			start = True
 
-            if len(save_files) <1:
-                print "No save files!"
+		else:
+			print('You have chosen an invalid level!\n')
+			print('Try again\n')
+			
+	while won == False:				
+		player = tsoro.get_current_player()
+		move = {'index_begin': 0, 'action': 0}
+		if player == 1:			
+			move_index = convert_str(input("Which hole index do you want to pick from?"))
+			move['index_begin'] = move_index
+			move['action'] = UnitAction.ACTION_GO_FORWARD
+		else:
+			move['index_begin'] = 3
+			move['action'] = UnitAction.ACTION_GO_FORWARD
 
-            else:
-                os.system('cls')
-                save_files.reverse()
-                print "Save Games:\n"
-                for name in save_files:
-                    print name[8:][:-4]+"\n"
-
-                save_option =raw_input("What game would you like to load? (or BACK (B)): ").upper()
-                if save_option == "B" or save_option == "BACK":
-                    os.system('cls')
-                else:
-                    try:
-                        opened_file = open('.\Saves\\'+save_option+'.pkl', 'rb')
-                        data = pickle.load(opened_file)
-                        
-                        second, first, Won, turn = data
-                        start = True
-                    except Exception:
-                        os.system('cls')
-                        print "Not a valid name\n"
-
-        else:
-            print "try again\n"
-            
-    while Won==False:
-    	tsoro = TsoroGameEngine(3)
+		os.system('cls') 
+		units = tsoro.action_to_units(player, move)
+				
+		action = tsoro.execute()
+		print(action)
+		board = tsoro.get_current_board()
+		
 		tsoro.print_board()
-        first, second, Won, turn = play_turn(player1, player2, Won, turn)
-        player2.turn(player1)
-        
-        
-    raw_input("Hit enter to close. ")
 
+		won == units
+		
+		
+		
+	input("Hit enter to close. ")
 
-
-if __name__ == '__main__':
-    start()
+start()
